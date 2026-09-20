@@ -30,6 +30,14 @@ class TemperatureConverterTest {
     }
 
     @Test
+    void kelvinToCelsiusConvertsMultipleTemperatures() {
+        assertEquals(26.85, converter.kelvinToCelsius(300), 0.001);
+        assertEquals(0, converter.kelvinToCelsius(273.15), 0.001);
+        assertEquals(100, converter.kelvinToCelsius(373.15), 0.001);
+        assertEquals(-273.15, converter.kelvinToCelsius(0), 0.001);
+    }
+
+    @Test
     void isExtremeTemperatureReturnsTrueOnlyOutsideAllowedRange() {
         assertTrue(converter.isExtremeTemperature(-40.1));
         assertFalse(converter.isExtremeTemperature(-40));
