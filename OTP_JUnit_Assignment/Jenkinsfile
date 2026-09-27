@@ -5,20 +5,20 @@ pipeline {
         DOCKERHUB_USER = 'satvikvelpula'
         IMAGE_NAME = 'temperature-converter'
         IMAGE_TAG = '1.0'
+        MAVEN_IMAGE = 'maven:3.9-eclipse-temurin-17'
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                git branch: 'OTP_JUnit_Assignment_3',
-                    url: 'https://github.com/satvikvelpula/Design_Patterns_Java.git'
-            }
-        }
 
         stage('Build') {
             steps {
                 dir('OTP_JUnit_Assignment') {
-                    sh 'mvn clean install -DskipTests'
+                    sh '''
+                        docker run --rm \
+                          -v "$PWD":/app -w /app \
+                          ${MAVEN_IMAGE} \
+                          mvn clean install -DskipTests
+                    '''
                 }
             }
         }
@@ -26,7 +26,12 @@ pipeline {
         stage('Test') {
             steps {
                 dir('OTP_JUnit_Assignment') {
-                    sh 'mvn test'
+                    sh '''
+                        docker run --rm \
+                          -v "$PWD":/app -w /app \
+                          ${MAVEN_IMAGE} \
+                          mvn test
+                    '''
                 }
             }
         }
@@ -34,7 +39,12 @@ pipeline {
         stage('Code Coverage') {
             steps {
                 dir('OTP_JUnit_Assignment') {
-                    sh 'mvn jacoco:report'
+                    sh '''
+                        docker run --rm \
+                          -v "$PWD":/app -w /app \
+                          ${MAVEN_IMAGE} \
+                          mvn jacoco:report
+                    '''
                 }
             }
         }
@@ -65,7 +75,7 @@ pipeline {
 
         stage('Docker Push') {
             steps {
-                // Create credentials in Jenkins: username/password ID = dockerhub-credentials
+                // Jenkins → Manage Jenkins → Credentials → ID must be: dockerhub-credentials
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub-credentials',
                     usernameVariable: 'DOCKER_USER',
