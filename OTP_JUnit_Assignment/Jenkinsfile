@@ -1,0 +1,89 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKERHUB_USER = 'satvikvelpula'
+        IMAGE_NAME = 'temperature-converter'
+        IMAGE_TAG = '1.0'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'OTP_JUnit_Assignment_3',
+                    url: 'https://github.com/satvikvelpula/Design_Patterns_Java.git'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                dir('OTP_JUnit_Assignment') {
+                    sh 'mvn clean install -DskipTests'
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                dir('OTP_JUnit_Assignment') {
+                    sh 'mvn test'
+                }
+            }
+        }
+
+        stage('Code Coverage') {
+            steps {
+                dir('OTP_JUnit_Assignment') {
+                    sh 'mvn jacoco:report'
+                }
+            }
+        }
+
+        stage('Publish Test Results') {
+            steps {
+                junit 'OTP_JUnit_Assignment/target/surefire-reports/*.xml'
+            }
+        }
+
+        stage('Publish Coverage Report') {
+            steps {
+                jacoco(
+                    execPattern: 'OTP_JUnit_Assignment/target/*.exec',
+                    classPattern: 'OTP_JUnit_Assignment/target/classes',
+                    sourcePattern: 'OTP_JUnit_Assignment/src/main/java'
+                )
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                dir('OTP_JUnit_Assignment') {
+                    sh "docker build -t ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG} ."
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                // Create credentials in Jenkins: username/password ID = dockerhub-credentials
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker push ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}
+                        docker logout
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline finished.'
+        }
+    }
+}
