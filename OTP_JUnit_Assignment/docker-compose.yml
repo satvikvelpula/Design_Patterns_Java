@@ -1,0 +1,26 @@
+# Local MariaDB for the JavaFX app (mvn javafx:run)
+#   docker compose up -d
+#   docker compose down -v   # wipe + re-run schema.sql
+
+services:
+  db:
+    image: mariadb:11
+    container_name: temperature-mariadb
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: temperature_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - temperature_db_data:/var/lib/mysql
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+
+volumes:
+  temperature_db_data:

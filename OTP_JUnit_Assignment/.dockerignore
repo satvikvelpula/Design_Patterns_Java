@@ -3,3 +3,7 @@ target/
 .mvn/
 *.iml
 .DS_Store
+.git/
+.gitignore
+Jenkinsfile
+*.md
