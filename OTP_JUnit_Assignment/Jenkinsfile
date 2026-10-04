@@ -17,7 +17,9 @@ pipeline {
             }
             steps {
                 dir('OTP_JUnit_Assignment') {
-                    sh 'mvn clean test jacoco:report'
+                    // CI agents are often linux/arm; JavaFX 21 has no linux-aarch64 classifier.
+                    // 'linux' (amd64) jars are enough to compile/test; GUI runs on the host via javafx:run.
+                    sh 'mvn clean test jacoco:report -Djavafx.platform=linux'
                 }
             }
             post {
