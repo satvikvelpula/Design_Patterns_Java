@@ -94,8 +94,6 @@ JaCoCo HTML report: `target/site/jacoco/index.html`
 5. Invalid input / missing unit → error `Alert` (no crash).
 6. Optional: build image and run with `DISPLAY` set (XQuartz / X11) to confirm containerized GUI.
 
-Screenshot reference (if present): `src/main/images/Test_Case_Res.png`.
-
 ---
 
 ## 5. How to Run
