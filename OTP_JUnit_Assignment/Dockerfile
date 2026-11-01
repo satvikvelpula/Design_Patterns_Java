@@ -6,9 +6,26 @@ RUN mvn -q clean package -DskipTests
 
 FROM eclipse-temurin:17-jre
 WORKDIR /app
+
+# Native libs for JavaFX + X11 (XQuartz / Xming)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgtk-3-0 \
+    libgl1 \
+    libx11-6 \
+    libxtst6 \
+    libxrender1 \
+    libxi6 \
+    libxext6 \
+    libxrandr2 \
+    libxcursor1 \
+    libasound2t64 \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /app/target/OTP_JUnit_Assignment-1.0-SNAPSHOT.jar app.jar
 
-# Localization console (interactive stdin). Example:
-#   docker build -t temperature-converter:1.0 .
-#   docker run -it --rm temperature-converter:1.0
+ENV DB_URL=jdbc:mysql://host.docker.internal:3306/temperature_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+ENV DB_USER=root
+ENV DB_PASSWORD=root
+ENV DISPLAY=host.docker.internal:0
+
 ENTRYPOINT ["java", "-jar", "app.jar"]

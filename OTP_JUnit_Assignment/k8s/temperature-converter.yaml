@@ -1,0 +1,67 @@
+# Week-2 style Kubernetes manifest for minikube.
+# GUI still needs an X display; this deploys the image for CI/CD + k8s practice.
+#
+#   minikube start
+#   eval $(minikube docker-env)   # optional: use local image
+#   kubectl apply -f k8s/temperature-converter.yaml
+#   kubectl get pods
+#   kubectl logs -l app=temperature-converter
+#   kubectl delete -f k8s/temperature-converter.yaml
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: temperature-demo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: temperature-converter
+  namespace: temperature-demo
+  labels:
+    app: temperature-converter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: temperature-converter
+  template:
+    metadata:
+      labels:
+        app: temperature-converter
+    spec:
+      containers:
+        - name: temperature-converter
+          image: satvikvelpula/temperature-converter:1.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DB_URL
+              value: "jdbc:mysql://host.minikube.internal:3306/temperature_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+            - name: DB_USER
+              value: "root"
+            - name: DB_PASSWORD
+              value: "root"
+            # For true GUI in-cluster you'd need an X11 sidecar / VNC; assignment mainly checks apply+pod.
+            - name: DISPLAY
+              value: "host.minikube.internal:0"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: temperature-converter
+  namespace: temperature-demo
+spec:
+  selector:
+    app: temperature-converter
+  ports:
+    - name: unused
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
