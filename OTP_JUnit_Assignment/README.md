@@ -46,10 +46,16 @@ The language combo updates **both** at once (reload FXML bundle + re-query DAO w
 ```bash
 cd OTP_JUnit_Assignment
 docker compose down -v    # required once to load new init.sql
-docker compose up -d
+docker compose up -d      # DAO tests need MariaDB running (otherwise they skip)
 mvn javafx:run
-mvn clean test jacoco:report
+mvn clean test jacoco:report jacoco:check
 ```
+
+### JaCoCo / 80% core-logic target
+JaCoCo **excludes GUI and legacy** classes (`Main`, `TemperatureViewController`, old `TempRecord*`, etc.).  
+**Included core logic:** `TemperatureConverter`, `UnitDAO`, `ConversionRecordDAO`, `Unit`, `ConversionRecord`, `LocaleCodes`, `DBConnection`.
+
+With MariaDB up, `jacoco:check` enforces **≥ 80% line coverage** on that core set. Open `target/site/jacoco/index.html` for the report.
 
 Docker / Jenkins / minikube: see previous assignment notes; manifests in `Dockerfile`, `Jenkinsfile`, `k8s/temperature-converter.yaml`.
 

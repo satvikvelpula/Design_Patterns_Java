@@ -9,12 +9,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DBConnectionTest {
-
     @Test
     void defaultsPointAtLocalMysqlAsRoot() {
-        assertNotNull(DBConnection.getUrl());
-        assertTrue(DBConnection.getUrl().contains("jdbc:mysql://"));
-        assertFalse(DBConnection.getUser().isBlank());
+        assertTrue(DBConnection.getUrl().contains("temperature_db"));
+        assertTrue(DBConnection.getUrl().contains("characterEncoding=UTF-8"));
+        assertEqualsIgnoringBlank("root", DBConnection.getUser());
     }
 
     @Test
@@ -22,8 +21,13 @@ class DBConnectionTest {
         try (Connection conn = DBConnection.getConnection()) {
             assertNotNull(conn);
             assertFalse(conn.isClosed());
-        } catch (SQLException e) {
-            Assumptions.assumeTrue(false, "MariaDB not reachable — start: docker compose up -d db");
+        } catch (SQLException ex) {
+            Assumptions.assumeTrue(false, "MariaDB not reachable — start: docker compose up -d");
         }
+    }
+
+    private static void assertEqualsIgnoringBlank(String expected, String actual) {
+        assertTrue(actual != null && !actual.isBlank());
+        org.junit.jupiter.api.Assertions.assertEquals(expected, actual);
     }
 }
