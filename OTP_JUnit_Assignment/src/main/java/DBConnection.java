@@ -9,7 +9,7 @@ import java.sql.SQLException;
 public class DBConnection {
     private static final String URL = getenv(
             "DB_URL",
-            "jdbc:mysql://localhost:3306/temperature_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+            "jdbc:mysql://localhost:3306/temperature_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8"
     );
     private static final String USER = getenv("DB_USER", "root");
     private static final String PASSWORD = getenv("DB_PASSWORD", "root");

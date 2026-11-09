@@ -1,6 +1,7 @@
-# Local MariaDB for the JavaFX app (mvn javafx:run)
+# Local MariaDB (utf8mb4) for the JavaFX app
+#   docker compose down -v   # wipe old schema
 #   docker compose up -d
-#   docker compose down -v   # wipe + re-run schema.sql
+#   mvn javafx:run
 
 services:
   db:
@@ -10,11 +11,16 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: temperature_db
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
     ports:
       - "3306:3306"
     volumes:
       - temperature_db_data:/var/lib/mysql
-      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./src/main/resources/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 5s

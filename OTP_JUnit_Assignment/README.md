@@ -1,100 +1,61 @@
-# In-class Assignment 6 — JavaFX GUI Localization (+ DB, Docker, Jenkins, K8s)
+# In-class Assignment 6 — Database Localization (OTP2_Assignment_3)
 
-Branch: **`OTP2_Assignment_2`**  
-Module: **`OTP_JUnit_Assignment`**
+JavaFX Temperature Converter with:
+- UI labels from UTF-8 `MessagesBundle_*.properties` (en / fi / sv / ja / ar)
+- **Unit names & descriptions from MariaDB** using the **translation table** approach
+- Measurement tables for speed / distance / time
+- JaCoCo, Jenkins, Docker, Kubernetes
 
-## Status (what is done)
+## Chosen DB localization approach: Translation table
 
-| PDF requirement | Status | Where |
-|-----------------|--------|--------|
-| JavaFX GUI for temperature convert | **Done** | `Main.java` + `temperature.fxml` + `TemperatureViewController.java` |
-| Language: EN / FI / SV / JA / **AR** | **Done** | `MessagesBundle_*.properties` (incl. `ar_SA`), combo in GUI |
-| i18n via **FXML** + `.properties` (UTF-8) | **Done** | `%keys` in FXML + `ResourceBundle` |
-| DB ≥ 2 related tables + GUI uses DB | **Done** (from A7 / prior) | `temperature_unit` ↔ `temp_record` (`schema.sql`), save/refresh in GUI |
-| Converter + JUnit + JaCoCo | **Done** | `TemperatureConverter` + tests + JaCoCo plugin |
-| Jenkins build/test + Docker Hub push | **Done** (existing) | `Jenkinsfile` |
-| Dockerfile for GUI (X11) | **Done** | `Dockerfile` (GTK + `DISPLAY`) |
-| Kubernetes YAML + minikube | **Done** (manifest) | `k8s/temperature-converter.yaml` |
-| Screenshots / Hub URL / GitHub link | **Your remaining work** | See below |
+**Approach:** language-neutral `unit` table + `unit_translation(unit_id, lang, name, description)`.
 
-> Note: PDF text mentions “speed, distance, and time” tables — that looks like a template leftover. This project keeps the **temperature** domain with two related tables (same idea as OTP_JUnit_Assignment_7).
+### Schema (summary)
+
+| Table | Role |
+|-------|------|
+| `unit` | Codes/categories/symbols only (C, F, K, kmh, …) — no localized text |
+| `unit_translation` | One row per `(unit_id, lang)` with `name` + `description` (en, fi, sv, ja, ar) |
+| `trip` / `trip_leg` | Measurement data (distance, time → speed) with FKs to `unit` |
+| `conversion_record` | Saved temperature conversions (value, from/to unit, result, lang, timestamp) |
+
+Queries use `LEFT JOIN unit_translation` for the selected language and `JOIN` English as **fallback** (`COALESCE`).
+
+### Why this approach
+
+1. **Normalization** — non-text fields (code, symbol, category) are stored once; adding Japanese/Arabic never duplicates measurement columns.
+2. **Easy to extend** — a new language is new rows only (no `ALTER TABLE`, no new `unit_xx` tables).
+3. **Matches production practice** — the brief notes translation tables are the usual industry choice; this assignment is small enough that the extra JOIN is fine.
+4. **Clean fallback** — missing `lang` rows fall back to English without NULL-filled language columns.
+
+Field/row/table approaches were rejected here: field columns grow the schema per language; row approach duplicates non-text data; per-language tables force runtime table-name switching and schema drift.
+
+### Two localization layers
+
+| Layer | Source | Examples |
+|-------|--------|----------|
+| Static UI | ResourceBundle `.properties` | Buttons, titles, column headers |
+| Domain text | DB `unit_translation` | “Celsius”, “セルシウス”, “مئوية”, descriptions |
+
+The language combo updates **both** at once (reload FXML bundle + re-query DAO with `LocaleCodes.fromLocale`).
 
 ---
 
-## How to continue (checklist)
+## How to run
 
-### 1. Database
 ```bash
 cd OTP_JUnit_Assignment
+docker compose down -v    # required once to load new init.sql
 docker compose up -d
-```
-
-### 2. Run the localized JavaFX GUI locally
-```bash
-mvn -q javafx:run
-```
-- Switch language in the combo (try **Arabic** for RTL + non-default locale).
-- Convert a value, **Save to DB**, **Refresh history**.
-
-### 3. Tests + coverage (screenshot for yourself / course)
-```bash
+mvn javafx:run
 mvn clean test jacoco:report
-open target/site/jacoco/index.html
 ```
 
-### 4. Docker image + X server screenshot (Oma)
-**macOS (XQuartz):**
-```bash
-# XQuartz → Preferences → Security → “Allow connections from network clients”
-# then restart XQuartz
-xhost +localhost
-docker build -t satvikvelpula/temperature-converter:1.0 .
-docker run --rm -e DISPLAY=host.docker.internal:0 satvikvelpula/temperature-converter:1.0
-```
-**Windows:** use Xming/VcXsrv; set `DISPLAY` to your host IP `:0.0`.
+Docker / Jenkins / minikube: see previous assignment notes; manifests in `Dockerfile`, `Jenkinsfile`, `k8s/temperature-converter.yaml`.
 
-Screenshot the GUI window from the X server for Oma.
-
-### 5. Push image (if not already)
-```bash
-docker login
-docker push satvikvelpula/temperature-converter:1.0
-```
-Oma needs: `https://hub.docker.com/r/satvikvelpula/temperature-converter`
-
-### 6. Minikube + YAML
-```bash
-minikube start
-# optional: load local image into minikube
-minikube image load satvikvelpula/temperature-converter:1.0
-
-kubectl apply -f k8s/temperature-converter.yaml
-kubectl get pods -n temperature-demo
-kubectl logs -n temperature-demo -l app=temperature-converter
-
-kubectl delete -f k8s/temperature-converter.yaml
-```
-Pod may exit if there is no display — still shows you applied the week-2-style manifest.
-
-### 7. GitHub
-Commit/push branch `OTP2_Assignment_2` when ready; submit the repo URL on Oma.
-
----
-
-## Oma deliverables
-
-1. GitHub repository link  
-2. Docker Hub image URL  
-3. Screenshot(s) of the GUI via Xming/XQuartz (show a non-English language if possible)
-
----
-
-## Useful commands summary
-
-| Goal | Command |
-|------|---------|
-| DB | `docker compose up -d` |
-| GUI | `mvn javafx:run` |
-| Test/coverage | `mvn clean test jacoco:report` |
-| Image | `docker build -t satvikvelpula/temperature-converter:1.0 .` |
-| K8s | `kubectl apply -f k8s/temperature-converter.yaml` |
+### Oma reminders
+1. GitHub link (branch `OTP2_Assignment_3`)
+2. Docker Hub URL
+3. GUI screenshots (EN / JA / AR) via X server if required
+4. Jenkins + JaCoCo + `kubectl get pods` screenshots
+5. This README section (approach + justification)

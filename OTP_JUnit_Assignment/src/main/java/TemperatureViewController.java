@@ -2,7 +2,6 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.geometry.NodeOrientation;
 import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
@@ -20,33 +19,29 @@ import java.util.ResourceBundle;
 
 public class TemperatureViewController {
     private final TemperatureConverter converter = new TemperatureConverter();
-    private final TemperatureUnitDAO unitDAO = new TemperatureUnitDAO();
-    private final TempRecordDAO recordDAO = new TempRecordDAO();
+    private final UnitDAO unitDAO = new UnitDAO();
+    private final ConversionRecordDAO conversionDAO = new ConversionRecordDAO();
 
     private Main app;
     private ResourceBundle bundle;
+    private Locale currentLocale = Locale.US;
+    private String dbLang = LocaleCodes.DEFAULT;
     private boolean updatingLanguage;
 
     @FXML private VBox root;
-    @FXML private Label titleLabel;
-    @FXML private Label languageLabel;
-    @FXML private Label valueLabel;
-    @FXML private Label fromLabel;
-    @FXML private Label toLabel;
-    @FXML private Label resultLabel;
-    @FXML private Label historyLabel;
     @FXML private ComboBox<Locale> languageBox;
     @FXML private TextField inputField;
-    @FXML private ComboBox<TemperatureUnit> fromUnitBox;
-    @FXML private ComboBox<TemperatureUnit> toUnitBox;
-    @FXML private Button convertButton;
-    @FXML private Button saveButton;
-    @FXML private Button refreshButton;
-    @FXML private TableView<TempRecord> historyTable;
-    @FXML private TableColumn<TempRecord, Integer> idColumn;
-    @FXML private TableColumn<TempRecord, Double> valueColumn;
-    @FXML private TableColumn<TempRecord, String> unitColumn;
-    @FXML private TableColumn<TempRecord, Object> timeColumn;
+    @FXML private ComboBox<Unit> fromUnitBox;
+    @FXML private ComboBox<Unit> toUnitBox;
+    @FXML private Label unitDescriptionLabel;
+    @FXML private Label resultLabel;
+    @FXML private TableView<ConversionRecord> historyTable;
+    @FXML private TableColumn<ConversionRecord, Double> inputColumn;
+    @FXML private TableColumn<ConversionRecord, String> fromColumn;
+    @FXML private TableColumn<ConversionRecord, String> toColumn;
+    @FXML private TableColumn<ConversionRecord, Double> resultColumn;
+    @FXML private TableColumn<ConversionRecord, String> langColumn;
+    @FXML private TableColumn<ConversionRecord, Object> timeColumn;
 
     public void setApp(Main app) {
         this.app = app;
@@ -54,15 +49,16 @@ public class TemperatureViewController {
 
     public void init(ResourceBundle bundle, Locale currentLocale) {
         this.bundle = bundle;
+        this.currentLocale = currentLocale;
+        this.dbLang = LocaleCodes.fromLocale(currentLocale);
         setupLanguageBox(currentLocale);
         setupTable();
+        setupUnitListeners();
         loadUnits();
         refreshHistory();
-        if ("ar".equals(currentLocale.getLanguage())) {
-            root.setNodeOrientation(NodeOrientation.RIGHT_TO_LEFT);
-        } else {
-            root.setNodeOrientation(NodeOrientation.LEFT_TO_RIGHT);
-        }
+        root.setNodeOrientation("ar".equals(currentLocale.getLanguage())
+                ? NodeOrientation.RIGHT_TO_LEFT
+                : NodeOrientation.LEFT_TO_RIGHT);
     }
 
     private void setupLanguageBox(Locale currentLocale) {
@@ -111,29 +107,45 @@ public class TemperatureViewController {
     }
 
     private void setupTable() {
-        idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
-        valueColumn.setCellValueFactory(new PropertyValueFactory<>("value"));
-        unitColumn.setCellValueFactory(new PropertyValueFactory<>("unitCode"));
+        inputColumn.setCellValueFactory(new PropertyValueFactory<>("inputValue"));
+        fromColumn.setCellValueFactory(new PropertyValueFactory<>("fromUnitName"));
+        toColumn.setCellValueFactory(new PropertyValueFactory<>("toUnitName"));
+        resultColumn.setCellValueFactory(new PropertyValueFactory<>("resultValue"));
+        langColumn.setCellValueFactory(new PropertyValueFactory<>("lang"));
         timeColumn.setCellValueFactory(new PropertyValueFactory<>("recordedAt"));
         historyTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+    }
+
+    private void setupUnitListeners() {
+        fromUnitBox.setOnAction(e -> updateDescription());
+        toUnitBox.setOnAction(e -> updateDescription());
+    }
+
+    private void updateDescription() {
+        Unit from = fromUnitBox.getValue();
+        Unit to = toUnitBox.getValue();
+        if (from == null || to == null) {
+            unitDescriptionLabel.setText("");
+            return;
+        }
+        unitDescriptionLabel.setText(from.getDescription() + " → " + to.getDescription());
     }
 
     @FXML
     private void onConvert() {
         try {
             double value = Double.parseDouble(inputField.getText().trim());
-            TemperatureUnit from = fromUnitBox.getValue();
-            TemperatureUnit to = toUnitBox.getValue();
+            Unit from = fromUnitBox.getValue();
+            Unit to = toUnitBox.getValue();
             if (from == null || to == null) {
                 showError(bundle.getString("error.units"));
                 return;
             }
-            double celsius = toCelsius(value, from.getCode());
-            double converted = fromCelsius(celsius, to.getCode());
+            double converted = convert(value, from.getCode(), to.getCode());
             resultLabel.setText(MessageFormat.format(
                     bundle.getString("result.format"),
                     String.format(Locale.ROOT, "%.2f", converted),
-                    to.getCode()
+                    to.getName()
             ));
         } catch (NumberFormatException ex) {
             showError(bundle.getString("error.number"));
@@ -144,18 +156,22 @@ public class TemperatureViewController {
     private void onSave() {
         try {
             double value = Double.parseDouble(inputField.getText().trim());
-            TemperatureUnit from = fromUnitBox.getValue();
-            if (from == null) {
-                showError(bundle.getString("error.fromUnit"));
+            Unit from = fromUnitBox.getValue();
+            Unit to = toUnitBox.getValue();
+            if (from == null || to == null) {
+                showError(bundle.getString("error.units"));
                 return;
             }
-            recordDAO.insert(new TempRecord(value, from.getId()));
-            refreshHistory();
+            double converted = convert(value, from.getCode(), to.getCode());
+            conversionDAO.insert(new ConversionRecord(
+                    value, from.getId(), to.getId(), converted, dbLang
+            ));
             resultLabel.setText(MessageFormat.format(
                     bundle.getString("result.saved"),
-                    String.format(Locale.ROOT, "%.2f", value),
-                    from.getCode()
+                    String.format(Locale.ROOT, "%.2f", converted),
+                    to.getName()
             ));
+            refreshHistory();
         } catch (NumberFormatException ex) {
             showError(bundle.getString("error.number"));
         } catch (SQLException ex) {
@@ -170,13 +186,14 @@ public class TemperatureViewController {
 
     private void loadUnits() {
         try {
-            List<TemperatureUnit> units = unitDAO.findAll();
+            List<Unit> units = unitDAO.findTemperatureUnits(dbLang);
             fromUnitBox.setItems(FXCollections.observableArrayList(units));
             toUnitBox.setItems(FXCollections.observableArrayList(units));
             if (!units.isEmpty()) {
                 fromUnitBox.getSelectionModel().selectFirst();
                 toUnitBox.getSelectionModel().select(Math.min(1, units.size() - 1));
             }
+            updateDescription();
         } catch (SQLException ex) {
             showError(MessageFormat.format(bundle.getString("error.db.units"), ex.getMessage()));
         }
@@ -184,27 +201,26 @@ public class TemperatureViewController {
 
     private void refreshHistory() {
         try {
-            historyTable.setItems(FXCollections.observableArrayList(recordDAO.findRecent(20)));
+            historyTable.setItems(FXCollections.observableArrayList(
+                    conversionDAO.findRecent(5, dbLang)
+            ));
         } catch (SQLException ex) {
             showError(MessageFormat.format(bundle.getString("error.db.history"), ex.getMessage()));
         }
     }
 
-    private double toCelsius(double value, String code) {
-        return switch (code) {
+    private double convert(double value, String fromCode, String toCode) {
+        double celsius = switch (fromCode) {
             case "C" -> value;
             case "F" -> converter.fahrenheitToCelsius(value);
             case "K" -> converter.kelvinToCelsius(value);
-            default -> throw new IllegalArgumentException("Unknown unit: " + code);
+            default -> throw new IllegalArgumentException("Unknown unit: " + fromCode);
         };
-    }
-
-    private double fromCelsius(double celsius, String code) {
-        return switch (code) {
+        return switch (toCode) {
             case "C" -> celsius;
             case "F" -> converter.celsiusToFahrenheit(celsius);
             case "K" -> celsius + 273.15;
-            default -> throw new IllegalArgumentException("Unknown unit: " + code);
+            default -> throw new IllegalArgumentException("Unknown unit: " + toCode);
         };
     }
 

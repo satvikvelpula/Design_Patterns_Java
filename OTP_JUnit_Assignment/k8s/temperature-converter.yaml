@@ -1,17 +1,96 @@
-# Week-2 style Kubernetes manifest for minikube.
-# GUI still needs an X display; this deploys the image for CI/CD + k8s practice.
+# App + MariaDB for minikube
 #
 #   minikube start
-#   eval $(minikube docker-env)   # optional: use local image
+#   minikube image load satvikvelpula/temperature-converter:1.0
 #   kubectl apply -f k8s/temperature-converter.yaml
-#   kubectl get pods
-#   kubectl logs -l app=temperature-converter
+#   kubectl get pods -n temperature-demo
 #   kubectl delete -f k8s/temperature-converter.yaml
 
 apiVersion: v1
 kind: Namespace
 metadata:
   name: temperature-demo
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-secret
+  namespace: temperature-demo
+type: Opaque
+stringData:
+  MYSQL_ROOT_PASSWORD: root
+  DB_USER: root
+  DB_PASSWORD: root
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mariadb-pvc
+  namespace: temperature-demo
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: temperature-db
+  namespace: temperature-demo
+  labels:
+    app: temperature-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: temperature-db
+  template:
+    metadata:
+      labels:
+        app: temperature-db
+    spec:
+      containers:
+        - name: mariadb
+          image: mariadb:11
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_DATABASE
+              value: temperature_db
+          args:
+            - --character-set-server=utf8mb4
+            - --collation-server=utf8mb4_unicode_ci
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+          readinessProbe:
+            exec:
+              command: ["healthcheck.sh", "--connect", "--innodb_initialized"]
+            initialDelaySeconds: 15
+            periodSeconds: 5
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: mariadb-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: temperature-db
+  namespace: temperature-demo
+spec:
+  selector:
+    app: temperature-db
+  ports:
+    - port: 3306
+      targetPort: 3306
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -36,12 +115,17 @@ spec:
           imagePullPolicy: IfNotPresent
           env:
             - name: DB_URL
-              value: "jdbc:mysql://host.minikube.internal:3306/temperature_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+              value: "jdbc:mysql://temperature-db:3306/temperature_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8"
             - name: DB_USER
-              value: "root"
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: DB_USER
             - name: DB_PASSWORD
-              value: "root"
-            # For true GUI in-cluster you'd need an X11 sidecar / VNC; assignment mainly checks apply+pod.
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: DB_PASSWORD
             - name: DISPLAY
               value: "host.minikube.internal:0"
           resources:

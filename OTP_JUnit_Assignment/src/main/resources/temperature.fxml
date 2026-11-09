@@ -27,34 +27,39 @@
             <ColumnConstraints hgrow="ALWAYS" minWidth="220.0"/>
         </columnConstraints>
 
-        <Label fx:id="languageLabel" text="%label.language" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-        <ComboBox fx:id="languageBox" prefWidth="280.0" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+        <Label text="%label.language" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <ComboBox fx:id="languageBox" prefWidth="320.0" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
 
-        <Label fx:id="valueLabel" text="%label.value" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <Label text="%label.value" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
         <TextField fx:id="inputField" promptText="%prompt.value" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
 
-        <Label fx:id="fromLabel" text="%label.from" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-        <ComboBox fx:id="fromUnitBox" prefWidth="280.0" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+        <Label text="%label.from" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <ComboBox fx:id="fromUnitBox" prefWidth="320.0" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
 
-        <Label fx:id="toLabel" text="%label.to" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
-        <ComboBox fx:id="toUnitBox" prefWidth="280.0" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+        <Label text="%label.to" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+        <ComboBox fx:id="toUnitBox" prefWidth="320.0" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
 
-        <Label fx:id="resultLabel" text="%result.placeholder" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+        <Label fx:id="unitDescriptionLabel" text="" wrapText="true"
+               GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+
+        <Label fx:id="resultLabel" text="%result.placeholder" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
     </GridPane>
 
     <HBox spacing="10.0">
-        <Button fx:id="convertButton" text="%button.convert" onAction="#onConvert"/>
-        <Button fx:id="saveButton" text="%button.save" onAction="#onSave"/>
-        <Button fx:id="refreshButton" text="%button.refresh" onAction="#onRefresh"/>
+        <Button text="%button.convert" onAction="#onConvert"/>
+        <Button text="%button.save" onAction="#onSave"/>
+        <Button text="%button.refresh" onAction="#onRefresh"/>
     </HBox>
 
-    <Label fx:id="historyLabel" text="%label.history"/>
+    <Label text="%label.history"/>
     <TableView fx:id="historyTable" prefHeight="240.0" VBox.vgrow="ALWAYS">
         <columns>
-            <TableColumn fx:id="idColumn" text="%col.id" prefWidth="60.0"/>
-            <TableColumn fx:id="valueColumn" text="%col.value" prefWidth="100.0"/>
-            <TableColumn fx:id="unitColumn" text="%col.unit" prefWidth="80.0"/>
-            <TableColumn fx:id="timeColumn" text="%col.time" prefWidth="200.0"/>
+            <TableColumn fx:id="inputColumn" text="%col.input" prefWidth="80.0"/>
+            <TableColumn fx:id="fromColumn" text="%col.from" prefWidth="100.0"/>
+            <TableColumn fx:id="toColumn" text="%col.to" prefWidth="100.0"/>
+            <TableColumn fx:id="resultColumn" text="%col.result" prefWidth="80.0"/>
+            <TableColumn fx:id="langColumn" text="%col.lang" prefWidth="50.0"/>
+            <TableColumn fx:id="timeColumn" text="%col.time" prefWidth="160.0"/>
         </columns>
     </TableView>
 </VBox>

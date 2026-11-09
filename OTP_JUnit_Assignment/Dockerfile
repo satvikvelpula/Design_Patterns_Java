@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY --from=build /app/target/OTP_JUnit_Assignment-1.0-SNAPSHOT.jar app.jar
 
-ENV DB_URL=jdbc:mysql://host.docker.internal:3306/temperature_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+ENV DB_URL=jdbc:mysql://host.docker.internal:3306/temperature_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
 ENV DB_USER=root
 ENV DB_PASSWORD=root
 ENV DISPLAY=host.docker.internal:0
