@@ -1,22 +1,5 @@
 # Bridge Pattern Implementation Report
 
-**Student:** Satvi  
-**Date:** November 16, 2025  
-**Course:** OTP2 Assignment 3
-
----
-
-## Table of Contents
-
-1. [Introduction](#1-introduction)
-2. [Original Implementation](#2-original-implementation)
-3. [New Functionality](#3-new-functionality)
-4. [Implementation Details](#4-implementation-details)
-5. [Verification](#5-verification)
-6. [Conclusion](#6-conclusion)
-
----
-
 ## 1. Introduction
 
 The Bridge pattern is a structural design pattern that divides business logic or a huge class into separate class hierarchies that can be developed independently. The key idea is to separate abstraction from implementation, allowing both to vary independently.
@@ -191,54 +174,16 @@ testSmartDevice(new SmartTV());
 ```
 
 **Verification Results:**
-- ✅ Original devices (Radio, TV) work with all remotes
-- ✅ SmartTV can be controlled with BasicRemote and AdvancedRemote
-- ✅ SmartRemote works with all devices
-- ✅ Voice control correctly interprets commands
-- ✅ SmartTV-specific features (internet browsing) work correctly
-- ✅ Bridge pattern maintained: Device and Remote hierarchies remain independent
+Original devices (Radio, TV) work with all remotes
+SmartTV can be controlled with BasicRemote and AdvancedRemote
+SmartRemote works with all devices
+Voice control correctly interprets commands
+SmartTV-specific features (internet browsing) work correctly
+Bridge pattern maintained: Device and Remote hierarchies remain independent
 
 ## 6. Conclusion
 
 The Bridge pattern implementation was successfully extended with new functionality while maintaining the separation of concerns between the Device and Remote hierarchies.
 
-**Design Decisions:**
-- Used instance checking in SmartRemote to handle SmartTV-specific commands
-- Maintained backward compatibility with existing devices and remotes
-- Followed the existing code style and patterns from the refactoring.guru example
 
----
-
-## File Structure
-
-```
-src/Bridge/
-├── Demo.java
-├── devices/
-│   ├── Device.java         # Device interface
-│   ├── Radio.java          # Radio device
-│   ├── Tv.java             # TV device
-│   └── SmartTV.java        # Extended SmartTV device
-└── remotes/
-    ├── Remote.java         # Remote interface
-    ├── BasicRemote.java    # Basic remote
-    ├── AdvancedRemote.java # Advanced remote with mute
-    └── SmartRemote.java    # Extended smart remote with voice control
-```
-
----
-
-## How to Run
-
-```bash
-cd /Users/satvi/DES/DesignPatterns
-javac -d target src/Bridge/devices/*.java src/Bridge/remotes/*.java src/Bridge/Demo.java
-java -cp target Bridge.Demo
-```
-
----
-
-## References
-
-1. Refactoring.Guru - Bridge Pattern: https://refactoring.guru/design-patterns/bridge/java/example
-2. Assignment - Bridge Pattern: https://github.com/vesavvo/design_patterns/blob/master/markdown/assignments/bridge.md
+Redundant file. Git commit bug – File located in Bridge package.
