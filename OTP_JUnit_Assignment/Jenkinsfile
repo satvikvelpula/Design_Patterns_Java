@@ -33,6 +33,34 @@ pipeline {
             }
         }
 
+        stage('SonarQube Analysis') {
+            agent {
+                docker {
+                    image 'maven:3.9-eclipse-temurin-17'
+                    args '-u root'
+                }
+            }
+            steps {
+                dir('OTP_JUnit_Assignment') {
+                    // Run SonarQube analysis
+                    // Requires SonarQube server configuration in Jenkins
+                    withSonarQubeEnv('SonarQube') {
+                        sh 'mvn sonar:sonar'
+                    }
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                // Wait for SonarQube quality gate result
+                // Requires SonarQube Quality Gates plugin in Jenkins
+                timeout(time: 1, unit: 'HOURS') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
         stage('Docker Build') {
             agent any
             steps {
@@ -64,6 +92,12 @@ pipeline {
     post {
         always {
             echo 'Pipeline finished.'
+        }
+        success {
+            echo 'Pipeline succeeded.'
+        }
+        failure {
+            echo 'Pipeline failed.'
         }
     }
 }
