@@ -46,7 +46,7 @@ pipeline {
                         credentialsId: 'SonarQube',
                         variable: 'SONAR_TOKEN'
                     )]) {
-                        withSonarQubeEnv('SonarQube') {
+                        withSonarQubeEnv('sonarqube') {
                             sh 'mvn sonar:sonar -Dsonar.host.url=http://host.docker.internal:9000 -Dsonar.login=$SONAR_TOKEN'
                         }
                     }
