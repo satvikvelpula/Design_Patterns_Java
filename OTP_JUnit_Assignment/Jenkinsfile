@@ -56,10 +56,11 @@ pipeline {
 
         stage('Quality Gate') {
             steps {
-                // Wait for SonarQube quality gate result
-                // Requires SonarQube Quality Gates plugin in Jenkins
                 timeout(time: 1, unit: 'HOURS') {
-                    waitForQualityGate abortPipeline: true
+                    // The server name must match what's configured in Jenkins
+                    waitForQualityGate taskId: '0cc0d192-3551-4d61-80ac-cc2441415fed',
+                                    serverName: 'sonarqube',
+                                    abortPipeline: true
                 }
             }
         }
