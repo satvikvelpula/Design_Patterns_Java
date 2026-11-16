@@ -30,4 +30,17 @@ public abstract class Map {
             System.out.println();
         }
     }
+
+    // Getters for Flyweight pattern access
+    public Tile[][] getGrid() {
+        return grid;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
 }
