@@ -42,10 +42,13 @@ pipeline {
             }
             steps {
                 dir('OTP_JUnit_Assignment') {
-                    // Run SonarQube analysis
-                    // Requires SonarQube server configuration in Jenkins
-                    withSonarQubeEnv('SonarQube') {
-                        sh 'mvn sonar:sonar'
+                    withCredentials([string(
+                        credentialsId: 'SonarQube',  // Replace with your credential ID
+                        variable: 'SONAR_TOKEN'
+                    )]) {
+                        withSonarQubeEnv('SonarQube') {
+                            sh 'mvn sonar:sonar -Dsonar.login=$SONAR_TOKEN'
+                        }
                     }
                 }
             }
