@@ -12,6 +12,16 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- 22+ ships linux-aarch64 (Jenkins + Apple Silicon Docker); 21 did not -->
     <javafx.version>22.0.2</javafx.version>
+
+    <!-- SonarQube analysis config. Lives in the pom (not only sonar-project.properties)
+         because sonar-maven-plugin reliably picks up sonar.* pom properties;
+         the Jenkins log showed the .properties file alone was not applied by scanner 5.1.0.4751. -->
+    <sonar.projectKey>OTP_JUnit_Assignment</sonar.projectKey>
+    <sonar.junit.reportPaths>target/surefire-reports</sonar.junit.reportPaths>
+    <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+    <!-- File-path patterns (SonarQube matches paths, not JaCoCo class names).
+         Mirrors the jacoco excludes below so GUI/legacy stay out of the coverage %. -->
+    <sonar.coverage.exclusions>**/Main*.java,**/Launcher*.java,**/LocalizationConsole*.java,**/TemperatureViewController*.java,**/TemperatureConverterGui*.java,**/TempRecord*.java,**/TemperatureUnit*.java</sonar.coverage.exclusions>
   </properties>
 
   <dependencies>

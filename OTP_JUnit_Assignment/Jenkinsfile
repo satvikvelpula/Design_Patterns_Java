@@ -51,7 +51,7 @@ pipeline {
                         variable: 'SONAR_TOKEN'
                     )]) {
                         withSonarQubeEnv('sonarqube') {
-                            sh 'mvn sonar:sonar -Dsonar.host.url=http://host.docker.internal:9000 -Dsonar.login=$SONAR_TOKEN'
+                            sh 'mvn sonar:sonar -Dsonar.host.url=http://host.docker.internal:9000 -Dsonar.token=$SONAR_TOKEN'
                         }
                     }
                 }
@@ -59,6 +59,7 @@ pipeline {
         }
 
         stage('Quality Gate') {
+            agent any
             steps {
                 withSonarQubeEnv('sonarqube') {
                     timeout(time: 1, unit: 'HOURS') {
