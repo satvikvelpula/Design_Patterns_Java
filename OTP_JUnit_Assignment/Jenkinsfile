@@ -18,7 +18,11 @@ pipeline {
             steps {
                 dir('OTP_JUnit_Assignment') {
                     // JavaFX 22+ provides linux-aarch64 jars for arm Jenkins agents.
-                    sh 'mvn clean test jacoco:report'
+                    // DB_URL points the DAO tests at the host's MariaDB (docker compose up -d
+                    // on the Jenkins host) via Docker Desktop's host gateway, so they run
+                    // instead of skipping via assumeTrue -> real JaCoCo coverage for the DAOs.
+                    // On a plain Linux agent add: --add-host=host.docker.internal:host-gateway
+                    sh 'DB_URL="jdbc:mysql://host.docker.internal:3306/temperature_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8" mvn clean test jacoco:report'
                 }
             }
             post {
